@@ -18,6 +18,9 @@ Vagrant.configure("2") do |config|
     node.vm.hostname = "k8s-node#{i}"
     ip = "192.168.17.#{i+200}"
     node.vm.network "private_network", ip: ip
+    if #{i} == 1
+      node.vm.network "forwarded_port", guest: 30002, host: 30002, protocol: "tcp"
+    end
     # Change the share to match your environment
     #node.vm.synced_folder "/home/jonas/ENV/VAGRANT/share", "/home/vagrant/share"
 
