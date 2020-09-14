@@ -16,11 +16,11 @@ Vagrant.configure("2") do |config|
     # available for Xenial only currently
     node.vm.box = "ubuntu/xenial64"
     node.vm.hostname = "k8s-node#{i}"
-    ip = "192.168.17.#{i+200}"
-    node.vm.network "private_network", ip: ip
-    if "#{i}" == "1"
-      node.vm.network "forwarded_port", guest: 30002, host: 30002, protocol: "tcp"
-    end
+    ip = "10.85.20.#{i+245}"
+    node.vm.network "public_network", bridge: "en0: Ethernet", ip: ip
+    #if "#{i}" == "1"
+    #  node.vm.network "forwarded_port", guest: 30002, host: 30002, protocol: "tcp"
+    #end
     # Change the share to match your environment
     #node.vm.synced_folder "/home/jonas/ENV/VAGRANT/share", "/home/vagrant/share"
 
@@ -36,9 +36,9 @@ Vagrant.configure("2") do |config|
 
         echo "-------------------------------------------------------------------------- Update hosts file"
 cat >> /etc/hosts <<EOF
-192.168.17.201 k8s-node1
-192.168.17.202 k8s-node2
-192.168.17.203 k8s-node3
+10.85.20.246 k8s-node1
+10.85.20.247 k8s-node2
+10.85.20.248 k8s-node3
 EOF
 
 cat /etc/hosts
@@ -109,7 +109,7 @@ if [[ #{i} -eq 1 ]];then
   systemctl enable kubelet
   systemctl start kubelet
 
-  kubeadm init --apiserver-advertise-address=192.168.17.201 --pod-network-cidr=10.244.0.0/16 | tee /home/vagrant/k8s-install.log
+  kubeadm init --apiserver-advertise-address=10.85.20.246 --pod-network-cidr=10.244.0.0/16 | tee /home/vagrant/k8s-install.log
   cat /home/vagrant/k8s-install.log | grep "kubeadm join" > /vagrant/cluster-join.sh
   echo "--discovery-token-unsafe-skip-ca-verification" >> /vagrant/cluster-join.sh
 
