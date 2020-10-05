@@ -1,0 +1,79 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dasboard-proxy
+  labels:
+    app.kubernetes.io/name: dasboard-proxy
+  namespace: kubernetes-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: dasboard-proxy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: dasboard-proxy
+    spec:
+      containers:
+        - name: dasboard-proxy
+          image: "keycloak/keycloak-gatekeeper:latest"
+          command:
+            - /opt/keycloak-gatekeeper
+            - --discovery-url=https://keycloak.10.85.20.245.nip.io:8443/auth/realms/hello
+            - --client-id=kubernetes
+            - --client-secret=21f49a3f-d059-438f-8039-e4437532c080
+            - --listen=0.0.0.0:3000
+            - --encryption-key=AgXa7xRcoClDEU0ZDSH4X0XhL5Qy2Z2j
+            - --redirection-url=https://dashboard.devopstales.intra
+            - --enable-refresh-tokens=true
+            - --upstream-url=https://kubernetes-dashboard
+            # debug:
+            #- --upstream-url=http://echo:8080
+            # for self sign cert or custom ca
+            #- --skip-upstream-tls-verify
+            - --skip-openid-provider-tls-verify
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dasboard-proxy
+  labels:
+    app.kubernetes.io/name: dasboard-proxy
+  namespace: kubernetes-dashboard
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: dasboard-proxy
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: dasboard-proxy
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "64k"
+    cert-manager.io/cluster-issuer: ca-issuer
+  namespace: kubernetes-dashboard
+spec:
+  tls:
+    - hosts:
+        - dashboard.devopstales.intra
+      secretName: dasboard-proxy-tls
+  rules:
+    - host: dashboard.devopstales.intra
+      http:
+        paths:
+          - backend:
+             serviceName: dasboard-proxy
+             servicePort: 3000
